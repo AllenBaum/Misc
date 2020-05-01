@@ -1,0 +1,21 @@
+# Finds folders being accessed by the console:
+import sys
+import pprint
+pprint.pprint(sys.path)
+
+# controlling numbers:  make them decimals with a specified precision:
+from decimal import getcontext, Decimal
+getcontext().prec = 1
+Decimal(0.1) + Decimal(0.2)
+
+# importing csv files:
+import csv
+
+# Import Excel
+#  see:  https://www.datacamp.com/community/tutorials/python-excel-tutorial
+import pandas as pd
+df = pd.read_excel("c:/Users/baumgaral/Data/C2S/140.xlsx”, sheetname = “140”)
+
+
+
+http://blog.minitab.com/blog/applying-statistics-in-quality-projects/using-multivariate-statistical-tools-to-analyze-customer-and-survey-data
