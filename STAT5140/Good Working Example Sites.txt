@@ -1,0 +1,3 @@
+Two good sites with examples:
+https://www.solver.com/time-series
+http://www.real-statistics.com/time-series-analysis/stochastic-processes/autocorrelation-function/
