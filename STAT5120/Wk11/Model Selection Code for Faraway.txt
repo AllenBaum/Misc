@@ -1,0 +1,97 @@
+###############################################
+### 
+### Remember that removal of variables based on
+### p-values from the testing significance is not
+### a valid method!
+###
+################################
+
+library(faraway)
+data(state)
+statedata <- data.frame(state.x77, row.names=state.abb)
+lmod <- lm(Life.Exp ~ ., statedata)
+sumary(lmod)
+
+lmod <- update(lmod, . ~ . - Area)
+sumary(lmod)
+
+lmod <- update(lmod, . ~ . - Illiteracy)
+sumary(lmod)
+
+lmod <- update(lmod, . ~ . - Income)
+sumary(lmod)
+
+lmod <- update(lmod, . ~ . - Population)
+sumary(lmod)
+
+sumary(lm(Life.Exp ~ Illiteracy + Murder+ Frost, statedata))
+
+
+
+#################################
+
+require(leaps)
+b <- regsubsets(Life.Exp~., data=statedata)
+rs <- summary(b)
+rs$which
+AIC <- 50*log(rs$rss/50) + (2:8)*2
+windows()
+par(mfrow=c(1,1))
+plot(AIC ~ I(1:7), ylab="AIC", xlab="Number of Predictors")
+
+#################################
+
+plot(2:8, rs$adjr2, xlab="No. of Parameters", ylab="Adjusted R-squared")
+which.max(rs$adjr2)  ###  5 parameters, 4 variables.  Confusing, I know.
+
+#################################
+
+plot(2:8, rs$cp, xlab= "No. of Parameters", ylab="Cp Statistic")
+abline(0,1)  ### The line indicates the models with 4 or more
+################ parameters would be good, but we like the 
+################ ones with fewer parameters...  so maybe 
+################ the model with 4 parameters is best. 
+
+#################################################
+###  Below is another step-wise type of search, but 
+### is probably better than using the p-value approach. 
+### You will need methods like these when the number of potential 
+### variables is large... in these cases, exhaustive searches 
+### are impractical, requiring too much computer time.  
+
+
+lmod <- lm(Life.Exp ~ ., data=statedata)
+step(lmod)
+
+###########################
+
+Checking for high leverage points...
+
+h <- lm.influence(lmod)$hat  ### These are the leverage values
+################################# From the hat matrix
+names(h) <- state.abb  ### state is some object with several datasets
+########################## including state.abb and state.x77.  
+
+b <- regsubsets(Life.Exp~., data=statedata, subset=(state.abb!="AK"))
+rs <- summary(b)
+rs$which[which.max(rs$adjr),]
+
+
+###  ... and so AREA makes it into the model...  If there is 
+### a variable you think should naturally be in the model, but 
+### the selection procedures you're using (a good method, like
+### best subsets... regsubsets()) doesn't select it, it might
+### be left out due to an outlier or leverage point.  
+
+##################################
+
+##  Strip charts are just up-ended dot plots.  The "jittering" 
+##  option just jiggles them around so the dots don't sit 
+##  totally on top of each other.  
+
+stripchart(data.frame(scale(statedata)), method = "jitter", las=2, vertical=TRUE)
+b <-  regsubsets(Life.Exp ~ log(Population) + Income+ Illiteracy + Murder+ HS.Grad+Frost+log(Area), statedata)
+rs <- summary(b)
+rs$which[which.max(rs$adjr),]
+
+

@@ -1,0 +1,524 @@
+set.seed(123)
+x <- rnorm(100, 5, 2)
+error1 <- rnorm(100, 0, 1)
+y <- x + 2*error1
+error2 <- rnorm(100, 0, 1)
+z <- x + 2*y + 1.5 * error2
+library(rgl)
+library(scatterplot3d)
+plot3d(x, y, z)
+
+
+##Places Rated Example
+
+library(tourr)
+head(places)
+attach(places)
+plot(lat ~ long)   #just for fun!
+
+
+
+
+##
+set.seed(123)
+x <- rnorm(10000, 2, .3)
+errors <- rnorm(10000, 0, 1)
+y <- .5*x + 0.8*errors +2
+plot(y ~ x)
+windows()
+plot(y ~ x, xlim=c(-1.5, 3.3), ylim=c(-1, 6))
+xy <- cbind(x, y)
+cov(xy)
+
+
+###
+eigen <- eigen(cov(xy))
+eigen
+
+
+
+###
+arrows(0, 0, eigen$vectors[1,1], eigen$vectors[2,1],
+lwd=3, col="green")
+
+arrows(0, 0, eigen$vectors[1,2], eigen$vectors[2,2],
+lwd=3, col="purple")
+
+meanx <- mean(x)
+
+meany <- mean(y)
+
+arrows(meanx, meany, meanx+eigen$vectors[1,1],
+meany+eigen$vectors[2,1], lwd=3, col="blue")
+
+arrows(meanx, meany, meanx+eigen$vectors[1,2],
+meany+eigen$vectors[2,2], lwd=3, col="red"
+
+
+
+
+pc <- prcomp(xy)
+pc
+
+summary(pc)
+
+
+
+## Places Rated Example
+
+library(tourr)
+head(places)
+attach(places)
+data <- places[,1:9]
+
+windows()
+par(mfrow=c(3,3))
+hist(data[,1])
+hist(data[,2])
+hist(data[,3])
+hist(data[,4])
+hist(data[,5])
+hist(data[,6])
+hist(data[,7])
+hist(data[,8])
+hist(data[,9])
+
+logdata <- log(data, 10)
+windows()
+par(mfrow=c(3,3))
+hist(logdata[,1])
+hist(logdata[,2])
+hist(logdata[,3])
+hist(logdata[,4])
+hist(logdata[,5])
+hist(logdata[,6])
+hist(logdata[,7])
+hist(logdata[,8])
+hist(logdata[,9])
+
+cov(logdata)
+eigen <- eigen(cov(logdata))
+eigen
+
+## To see the first three data points with their new coordinates:
+
+head(logdata)
+center.scale <- function(x) {
+scale(x, scale = FALSE)  ## If TRUE, rescales by st.dev
+}
+centered.logdata <- center.scale(logdata)
+centered.logdata[1:3,] %*% eigen$vectors  #Scores.
+
+
+## Scree Plot
+
+number <- seq(1, 9, 1)
+scree <- cbind(number, eigen$values)
+plot(scree, main="Scree Plot",
+xlab="Component Number", ylab="eigenvalue/variance")
+lines(scree)
+sum(eigen$values[1:4]) /sum(eigen$values[1:9])
+
+sum(eigen$values[1:5]) /sum(eigen$values[1:9])
+
+sum(eigen$values[1:6]) /sum(eigen$values[1:9])
+
+
+##Using prcomp to get the same thing..
+pc <- prcomp(logdata)
+pc
+summary(pc)
+(pc$sdev)^2 #returns the eigenvalues/variances if you want the
+
+## Or princomp: command:
+pc.new <- princomp(logdata)
+head(pc.new)
+centered.logdata[1:3,] %*% as.matrix(pc.new$loadings)
+### compare with...
+pc.new$scores[1:3,]
+
+
+
+####################     Interpretting Principle Components
+
+
+pc$rotation ##gives the loadings/eigenvectors/PCs
+fivepcs <- as.matrix(pc$rotation[,1:5])
+fivepcs
+class(fivepcs)
+logdatamatrix <- as.matrix(centered.logdata)
+mapped <- logdatamatrix %*% fivepcs
+#This projects the centered log_10 data
+#onto just the first five principle
+#components we're keeping (based on the scree plot
+#or cumulative variance, etc.) This works since the PCs
+#are unit vectors.
+
+
+
+cor(logdata, mapped)
+
+
+
+library(rgl)
+library(scatterplot3d)
+plot3d(mapped[,1], mapped[,2], mapped[,3])
+windows()
+plot(mapped[,1], mapped[,2])
+
+
+
+
+places[which.max(pc.new$scores[,1]),]
+
+
+max(pc.new$scores[,2]) # Finds the max
+# score on 2nd
+# prin. comp.
+places[which.max(pc.new$scores[,2]),] # Gets original
+# data for this
+# community.
+pc.new$scores[which.max(pc.new$scores[,2]),2] # Redundant...
+pc.new$scores[which.max(pc.new$scores[,2]),1] # Gets the first
+# prin. comp.
+# score for this
+# community.
+
+
+
+
+
+plot3d(mapped[,1], places$lat, places$long)
+
+
+
+
+
+
+########  Standardizing Variables Using the Correlation Matrix
+
+
+means <- colMeans(logdata)
+sds <- apply(logdata, 2, sd)
+zlogdata <- (logdata - t(replicate(329, means)))/
+t(replicate(329, sds))
+pc1 <- prcomp(zlogdata)
+pc1
+
+pc2 <- prcomp(logdata, center=TRUE, scale = TRUE)
+pc2
+
+(pc1$sdev)^2
+
+(pc1$sdev)^2/sum((pc1$sdev)^2)
+
+
+#####    Scree plot!
+
+windows()
+nums <- seq(1, 9, 1)
+eigs <- (pc1$sdev)^2
+scree <- cbind(nums, eigs)
+cumscree <- cbind(nums, cumeigs)
+plot(scree, main="Scree Plot for Standardized PCA",
+xlab="Principle Component Number", ylab="Eigenvalues / Variances")
+lines(scree)
+windows()
+
+
+#####  Or....
+
+
+screeplot(pc1, type="lines",col=3)
+
+
+###    Cumulative amount of variance....
+
+
+cumeigs <- matrix(NA, nrow=9, ncol=2)
+for (i in 1:9){
+cumeigs[i,1] <- sum(eigs[1:i])
+cumeigs[i,2] <- cumeigs[i,1]/sum(eigs[1:9])
+}
+cumscree <- cbind(nums, cumeigs)
+plot(cumscree, main = "Cumulative Variance Plot
+for Standardized PCA", xlab="Principle Component
+Number", ylab="Total Eigenvalues/Variances")
+lines(cumscree)
+
+
+
+pc1$rotation
+
+
+
+
+###### Bi plots
+windows()
+par(mfrow=c(1,3))
+
+biplot(pc1, choices=c(1,2), cex=0.8, main="Observatations According to First Two
+Principle Components")
+abline(h=0, v=0, lty = 2, col=8)
+###  "choices" determines which PCs are plotted...  in this case PC1 and PC2.
+
+
+
+biplot(pc1, choices=c(2,3), cex=0.8, main="Observatations According to First Two
+Principle Components")
+abline(h=0, v=0, lty = 2, col=8)
+###  PC3 vs PC2
+
+
+
+biplot(pc1, choices=c(3,4), cex=0.8, main="Observatations According to First Two
+Principle Components")
+abline(h=0, v=0, lty = 2, col=8)
+###  PC4 vs PC3
+
+
+
+### For correlations of standardized data
+library(gclus)
+windows()
+something = order.single(cor(zlogdata))
+cpairs(zlogdata, something)
+
+
+
+#######################################    Fat in Men Example
+
+
+
+library(faraway)
+windows()
+par(mfrow=c(1,3))
+data(fat,package="faraway")
+plot(neck ~ knee, fat)
+plot(chest ~ thigh, fat)
+plot(hip ~ wrist, fat)
+cfat <- fat[,9:18]
+prfat <- prcomp(cfat)
+dim(prfat$rot)
+dim(prfat$x)
+summary(prfat)
+round(prfat$rot[,1],2) #Makes numbers easier to read, fit page better
+prfatc <- prcomp(cfat, scale=TRUE)
+summary(prfatc)
+prfatc
+
+
+
+
+round(prfatc$rot[,1],2)
+round(prfatc$rot[,2],2)
+windows()
+screeplot(prfatc, type="lines", col=3)
+
+
+
+require(MASS)
+robfat <- cov.rob(cfat)
+md <- mahalanobis(cfat, center=robfat$center, cov=robfat$cov)
+n <- nrow(cfat);p <- ncol(cfat)
+plot(qchisq(1:n/(n+1),p), sort(md),
+xlab=expression(paste(chi^2," quantiles")),
+ylab="Sorted Mahalanobis distances", main="Chi-Square
+Probability Plot")
+abline(0,1)
+
+
+
+mahal <- order(md)
+mahal # So the largest three md values
+# correspond to observations 31, 86, 39.
+newmd <- md[-c(39, 86, 31, 175, 159, 206, 41, 36, 54, 216, 106)]
+newn <- n - 11 # update the number of rows
+plot(qchisq(1:newn/(newn+1),p), sort(newmd))
+
+
+
+newfatc <- cfat[-c(39, 86, 31, 175, 159, 206, 41, 36, 54,
+216, 106),]
+newprfatc <- prcomp(newfatc, scale=T)
+summary(newprfatc)
+
+
+newbrozek <- fat$brozek[-c(39, 86, 31, 175, 159, 206, 41, 36,
+54, 216, 106)]
+our.lmoda <- lm(newbrozek ~ ., data=newfatc)
+sumary(our.lmoda)
+
+
+
+our.lmodpcr <- lm(newbrozek ~ newprfatc$x[,1:2])
+sumary(our.lmodpcr)
+
+
+
+
+newprfatc$rot
+
+
+
+
+our.lmodr <- lm(newbrozek ~ scale(newfatc$hip) +
+I(scale(newfatc$thigh)-scale(newfatc$wrist)))
+sumary(our.lmodr)
+
+
+
+
+
+our.lmodr.star <- lm(newbrozek ~ scale(newfatc$abdom) +
+I(scale(newfatc$ankle)-scale(newfatc$abdom)))
+sumary(our.lmodr.star)
+
+
+
+
+################################    Example: Fat and Light
+
+data(meatspec, package="faraway")
+head(meatspec)
+
+
+
+trainmeat <- meatspec[1:172,]
+testmeat <- meatspec[173:215,]
+modlm <- lm(fat ~ ., trainmeat)
+summary(modlm)
+
+
+
+
+summary(modlm)$r.squared
+
+
+
+rmse <- function(x,y) sqrt(mean((x-y)^2))
+rmse(fitted(modlm), trainmeat$fat)
+rmse(predict(modlm,testmeat), testmeat$fat)
+
+
+modsteplm <- step(modlm)
+summary(modsteplm)
+length(modsteplm$coef)
+
+
+
+
+
+rmse(modsteplm$fit, trainmeat$fat)
+rmse(predict(modsteplm,testmeat), testmeat$fat)
+
+
+
+
+meatpca <- prcomp(trainmeat[,-101]) # Remove response.
+<- round(meatpca$sdev,3) # Easier to look at.
+
+
+
+windows()
+screeplot(meatpca, type="lines", col=3)
+cumeigs <- matrix(NA, nrow=100, ncol=2)
+nums <- seq(1, 100, 1)
+eigs <-(meatpca$sdev)^2
+sumeigs <- sum(eigs[1:100])
+for (i in 1:100){
+cumeigs[i,1] <- sum(eigs[1:i])
+cumeigs[i,2] <- cumeigs[i,1]/sumeigs
+}
+cumscree <- cbind(nums, cumeigs)
+
+
+plot(cumscree, main = "Cumulative Variance Plot
+for Standardized PCA", xlab="Principle Component
+Number", ylab="Total Eigenvalues/Variances")
+lines(cumscree)
+cumeigs[,2]
+
+
+
+matplot(1:100, meatpca$rot[,1:3], type="l", xlab="Frequency", ylab="", col=1)
+
+
+
+
+
+install.packages("pls")
+require(pls)
+pcrmod <- pcr(fat ~ ., data=trainmeat, ncomp=50) #stipulate the number of PCs
+
+
+
+rmse(predict(pcrmod, ncomp=4), trainmeat$fat)
+windows()
+par(mfrow=c(1,3))
+plot(modlm$coef[-1],xlab="Frequency",ylab="Coefficient",type="l")
+coefplot(pcrmod, ncomp=4, xlab="Frequency",main="")
+plot(meatpca$sdev[1:10],type="l",ylab="SD of PC", xlab="PC number")
+
+
+
+rmse(predict(pcrmod, testmeat, ncomp=4), testmeat$fat)
+
+
+
+
+windows()
+par(mfrow=c(1,2))
+pcrmse <- RMSEP(pcrmod, newdata=testmeat)
+plot(pcrmse,main="Test RMSE vs. Number of PCs \n using Training and Test Sets")
+which.min(pcrmse$val)
+pcrmse$val[28]
+
+
+
+set.seed(123)
+pcrmod <- pcr(fat ~ ., data=trainmeat, validation="CV", ncomp=50)
+pcrCV <- RMSEP(pcrmod, estimate="CV")
+plot(pcrCV,main="Test RMSE vs. Number of PCs \n by Cross-Validation")
+which.min(pcrCV$val)
+ypred <- predict(pcrmod, testmeat, ncomp=18)
+rmse(ypred, testmeat$fat)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

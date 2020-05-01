@@ -1,0 +1,5 @@
+sps <- ggplot(infmort_reduced, aes(x=income, y=mortality, colour=region)) + geom_point() + scale_colour_brewer(palette="Set1")
+
+
+sps + geom_smooth() # passes a loess smoother through the categorical variables
+sps + geom_smooth(method=lm, se=FALSE, fullrange=TRUE)  # passes a least squares line through each

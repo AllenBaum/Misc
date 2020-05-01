@@ -1,0 +1,170 @@
+####################################################
+#
+#   Chapter 2 of Extending the Linear Model with R
+#   by Faraway.
+#
+####################################################
+
+
+
+library(faraway)
+data(orings)
+plot(damage/6 ~ temp, orings, xlim=c(25, 85), ylim = c(0,1), 
+xlab = "Temperature", ylab="Prob of Damage")
+
+lmod <- lm(damage/6 ~ temp, orings) 
+abline(lmod)
+
+
+
+################################
+#
+#   Binomial Regression
+#
+#############################
+
+
+logitmod <- glm(cbind(damage, 6-damage) ~ temp, family=binomial, orings)
+summary(logitmod)
+####  Taking 1 - damage to get a prediction function that increases 
+####  moving left to right...
+
+plot(damage/6 ~ temp, orings, xlim = c(25,85), ylim= c(0,1), xlab = "Temperature", ylab="Prob of damage")
+x <- seq(25, 85, 1)
+lines(x, ilogit(11.6630-0.2162*x))
+
+probitmod <- glm(cbind(damage, 6-damage) ~ temp, family = binomial(link=probit), orings)
+summary(probitmod)
+####   Note the coefficients ar quite different, but the models are 
+####   very close (the coeficients for the logit and probit links 
+####   don't have the same meanings!
+
+x <- seq(25, 85, 1)
+lines(x, pnorm(5.5915-0.1058*x), lty=2)
+
+####  predicting the response at 31 deg. F for both models:
+
+ilogit(11.6630-.2162*31)
+pnorm(5.5915-0.1058*31)
+
+
+
+
+
+
+
+################
+#
+#    Inference!!!!!
+#
+###############################
+
+
+#  Consider a large model with l parameters and likelihood function L_L
+#  also a smaller model with s parameters and likelihood function
+#  L_S.  We can use the likelihood ratio statistic  
+#
+#  2 * log ( L_L   /   L_S  )
+#
+#  for comparing the models.  The test statistic becomes
+#  D = ....
+#
+#
+#
+
+
+#  for large n_i and the deviance is approximately distributed as 
+#  a chi-square with n-s = number of observations - number of 
+#  model parameters = degrees of freedom if the model is correct.
+
+pchisq(deviance(logitmod), df.residual(logitmod),lower=FALSE)
+
+#  For the null model...
+pchisq(38.9, 22, lower=FALSE)
+#  The null is inadequate.
+
+
+##For nested...
+pchisq(38.9 - 16.9,1, lower=FALSE)
+##  Since the p-value is small, conclude the effect of launch temp is statistically significant.
+
+
+##  Another way is to test beta_hat / s.e.(beta_bat), which has a 
+##  normal distribution...  The two methods are NOT equivalent.
+##  The test involving differences in the deviances is generally
+##  more accurate, and so we do one of these latter two methods.  
+
+##  95% CI for the beta_1 parameter:
+c(-.2162-1.96*0.0532, -0.2162+1.96*.0532)
+
+##  profile likelihood CI:
+
+library(MASS)
+confint(logitmod)
+
+
+###############################
+##
+##  Tolerance Distribution
+## 
+##  Just read this section...  it motivates the 
+##  use of the probit link.
+##
+################################
+
+
+
+
+
+###############################
+##
+##  Interpretting odds
+##
+##############
+
+###  Read about odds in the book, and log of 
+###  the odds as a linear model. 
+
+data(babyfood)
+xtabs(disease/(disease + nondisease)~sex + food, babyfood)
+mdl <- glm(cbind(disease, nondisease) ~ sex + food, family=binomial, babyfood)
+summary(mdl)
+
+###  For example, the model predicts the chance of infection for 
+###  an infant girl who breastfeeds to be  
+###  \[(1+e^{1.613 + 0.313 + 0.669})^{-1} \approx 0.06946.
+
+
+###  Since the class sizes are large, the chi-squared approximation
+###  for the model deviance should be good. Running the test...
+
+pchisq(deviance(mdl), df.residual(mdl), lower=FALSE)
+##  this gives p-value of .6970062, indicating the current model is 
+##  probably okay, and we probably don't need to include interaction terms.   
+## 
+
+
+###########################################
+
+
+##  drop1 function tests each predictor relative to the full
+##  model (we saw this before)
+drop1(mdl, test="Chi")
+exp(-.669)
+##  Interpretation (and this is really important):  breast feeding
+##  reduces the odds of respiratory disease to 51.22% of the odds
+##  of respiratory disease for the bottle feeding group.
+
+##  Get a CI for this beta value... then transform the endpoints to 
+##  get a 95% CI for the reduced odds:
+exp(c(-.669-1.96*0.153, -.669 + 1.96*.153))
+
+##  You can also make CIs using profile log-likelihood methods.  
+##  See the appendix of your book for more information.
+library(MASS)
+exp(confint(mdl))
+## This method (profile log-likelihood) is usually more reliable. 
+
+
+
+

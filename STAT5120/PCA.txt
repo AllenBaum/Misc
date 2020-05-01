@@ -1,0 +1,15 @@
+PCA in R
+http://www.instantr.com/2012/12/18/performing-a-principal-component-analysis-in-r/
+
+> iris
+> irispca<-princomp(iris[-5])
+
+# To view the proportion of the total variance explained by each component, use the command:
+> summary(irispca)
+
+# To view the loadings for the components, use the command:
+> irispca$loadings
+
+# To view the scores for each observation, use the command:
+> irispca$Scores
+> screeplot(irispca)

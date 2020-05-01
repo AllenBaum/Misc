@@ -1,0 +1,109 @@
+#########################################################
+#							#
+#  Partial Least Squares, ridge regression, and lasso   #
+#							#
+#########################################################
+
+set.seed(123)
+plsmod <- plsr(fat ~ ., data=meatspec[1:172,], ncomp=50, validation="CV")
+coefplot(plsmod, ncomp=4, xlab="Frequency")
+plsCV <- RMSEP(plsmod, estimate="CV")
+plot(plsCV, main="")
+
+
+
+ypred <- predict(plsmod, ncomp=15)
+rmse(ypred, trainmeat$fat)
+
+ytpred <- predict(plsmod, testmeat, ncomp=15)
+rmse(ytpred, testmeat$fat)
+
+
+
+
+###############         Ridge Regression!!!!!!!!!!!
+
+
+
+
+require(MASS)
+rgmod <- lm.ridge(fat ~ ., trainmeat, lambda = seq(0, 5e-8, len=21))
+matplot(rgmod$lambda, coef(rgmod), type="l", xlab=expression(lambda), ylab = expression(hat(beta)), col=1)
+which.min(rgmod$GCV)
+abline(v=1.75e-08)
+
+
+ypred <- cbind(1, as.matrix(trainmeat[,-101])) %*% coef(rgmod)[8,]
+rmse(ypred, trainmeat$fat)
+
+ypred <- cbind(1, as.matrix(testmeat[,-101])) %*% coef(rgmod)[8,]
+rmse(ypred, testmeat$fat)
+### not good..
+
+
+## Check the predictions for case #13 for the PLS and the Ridge 
+## regressions
+c(ytpred[13], ypred[13], testmeat$fat[13])
+rmse(ypred[-13], testmeat$fat[-13])
+###  The resulting RMSE is much better.  
+
+
+
+
+#########################   Lasso!!!!!!!!
+
+require(lars)
+data(state)
+statedata <- data.frame(state.x77, row.names=state.abb)
+lmod <- lars(as.matrix(statedata[,-4]), statedata$Life)
+plot(lmod)
+head(statedata[,-4])
+
+set.seed(123)
+cvlmod <- cv.lars(as.matrix(statedata[,-4]), statedata$Life)
+cvlmod$index[which.min(cvlmod$cv)]
+predict(lmod, s=0.65657, type="coef", mode="fraction")$coef
+### Above gets the lasso coefficients
+
+### Below are the OLS coefficients:
+coef(lm(Life.Exp ~ Population+ Murder + HS.Grad + Frost, statedata))
+
+
+
+
+
+########### Lasso is most useful for larger problems... ones with 
+########### Many variables...
+###########
+########### Back to the meat spectroscopy...
+
+trainy <- trainmeat$fat
+trainx <- as.matrix(trainmeat[,-101])
+lassomod <- lars(trainx, trainy)
+
+set.seed(123) 
+cvout <- cv.lars(trainx, trainy)
+cvout$index[which.min(cvout$cv)]
+
+testx <- as.matrix(testmeat[,-101])
+predlars <- predict(lassomod, testx, s=0.0101, mode="fraction")
+rmse(testmeat$fat, predlars$fit)
+### This RMSE is the best we've seen so far. 
+
+
+predlars <- predict(lassomod, s=0.0101, type="coef", mode = "fraction")
+plot(predlars$coef, type = "h", ylab="Coefficient")
+sum(predlars$coef != 0)
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,5 @@
+setwd("c:/Users/baumgaral/R")
+library(readxl)
+pima <- read_excel("c:/Users/baumgaral/Data/pima.xlsx")
+attach(pima)
+log_mod_pima <- glm(Outcome~Pregnancies + Glucose + BP + BMI + DiabPedFct, data=pima, family=binomial)
